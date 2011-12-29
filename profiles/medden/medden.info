@@ -23,6 +23,11 @@ dependencies[] = overlay
 dependencies[] = field_ui
 dependencies[] = file
 dependencies[] = rdf
+dependencies[] = live_css
+dependencies[] = module_filter
+dependencies[] = filter_perms
+dependencies[] = pathauto
+dependencies[] = admin_menu
 files[] = medden.profile
 
 ; Information added by drupal.org packaging script on 2011-12-05

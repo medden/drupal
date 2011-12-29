@@ -1,0 +1,134 @@
+<?php
+
+/**
+ * @file
+ *   This module allows you to 301 redirect all domains to one specific domain.
+ */
+
+/**
+ * Implementation hook_help().
+ */
+function domain_301_redirect_help($path, $arg) {
+  switch ($path) {
+    case 'admin/config/search/domain_301_redirect':
+    case 'admin/help#domain_301_redirect':
+      return t('The Domain 301 Redirect module allows sites to 301 redirect to a domain that is marked as the main domain. This means you can have all subdomains and other domains 301 redirect to a domain that you choose as the main domain. This provides great SEO benefit.');
+  }
+}
+
+/**
+ * Implements hook_menu().
+ */
+function domain_301_redirect_menu() {
+  $items = array();
+  $items['admin/config/search/domain_301_redirect'] = array(
+      'title' => 'Domain 301 Redirect',
+      'description' => 'Manage domain 301 redirection.',
+      'page callback' => 'drupal_get_form',
+      'page arguments' => array('domain_301_redirect_admin_form'),
+      'access callback' => 'user_access',
+      'access arguments' => array('administer site configuration'),
+      'file' => 'domain_301_redirect.admin.inc',
+      'type' => MENU_NORMAL_ITEM,
+  );
+  $items['domain_301_redirect_check'] = array(
+      'title' => 'Domain 301 Redirect Check',
+      'description' => 'Checks that the main domain listed actually points to the same site.',
+      'page callback' => 'domain_301_redirect_check',
+      'access callback' => TRUE,
+      'type' => MENU_CALLBACK,
+  );
+  return $items;
+}
+
+/**
+ * Implements hook_permission().
+ */
+function front_page_permission() {
+  return array(
+      'bypass domain 301 redirect' => array(
+          'title' => t('Bypass domain 301 redirect'),
+          'description' => t('If this permission is set, the user will not be 301 redirected if the domain does not match the main domain.'),
+      ),
+  );
+}
+
+/**
+ * Implementation hook_init().
+ */
+function domain_301_redirect_init() {
+  // Don't redirect when using drush
+  if (!drupal_is_cli()) {
+    $domain_301_redirect_enabled = variable_get('domain_301_redirect_enabled', false);
+    $domain_301_redirect_domain = variable_get('domain_301_redirect_domain', '');
+    if (!preg_match('|^https?://|', $domain_301_redirect_domain)) {
+      $domain_301_redirect_domain = 'http://' . $domain_301_redirect_domain;
+    }
+    $parsed_domain = parse_url($domain_301_redirect_domain, PHP_URL_HOST);
+    if ($domain_301_redirect_enabled && !empty($domain_301_redirect_domain) && $parsed_domain != $_SERVER['HTTP_HOST'] && !user_access('bypass domain 301 redirect')) {
+      drupal_goto($domain_301_redirect_domain . $_SERVER['REQUEST_URI'], array(), 301);
+    }
+  }
+}
+
+/**
+ * Implementation hook_cron().
+ */
+function domain_301_redirect_cron() {
+  $check_period = variable_get('domain_301_redirect_check_period', 60 * 60 * 3);
+  $last_checked = variable_get('domain_301_redirect_last_checked', 0);
+  $domain_301_redirect_enabled = variable_get('domain_301_redirect_enabled', false);
+  if ($domain_301_redirect_enabled && !empty($check_period) && $last_checked < time() - $check_period) {
+    $domain_301_redirect_domain = variable_get('domain_301_redirect_domain', '');
+    if (!preg_match('|^https?://|', $domain_301_redirect_domain)) {
+      $domain_301_redirect_domain = 'http://' . $domain_301_redirect_domain;
+    }
+    $domain_parts = parse_url($domain_301_redirect_domain);
+    $domain_301_redirect_domain = $domain_parts['scheme'] . '://' . $domain_parts['host'];
+    if (!domain_301_redirect_check_domain($domain_301_redirect_domain)) {
+      variable_set('domain_301_redirect_enabled', false);
+      watchdog('Domain 301 Redirect', 'The domain %domain no longer points to this site. Domain 301 redirection was disabled.', array('%domain' => $domain_301_redirect_domain), WATCHDOG_ERROR);
+    }
+    else {
+      watchdog('Domain 301 Redirect', 'Domain 301 redirect check passed.');
+    }
+    variable_set('domain_301_redirect_last_checked', time());
+  }
+}
+
+/**
+ * Check if a domain actually points to this site.
+ *
+ * This function checks that the main domain actually points to this site.
+ *
+ * @param $domain
+ *   The domain to be checked.
+ * 
+ * @return
+ *   Returns true if the domain passes the check. False otherwise.
+ * 
+ */
+function domain_301_redirect_check_domain($domain) {
+  if (!empty($domain)) {
+    $hash = md5(time());
+    variable_set('domain_301_redirect_domain_check', $hash);
+    $result = @file_get_contents($domain . '/domain_301_redirect_check');
+    if (!empty($result) && $result == $hash) {
+      return TRUE;
+    }
+  }
+  return FALSE;
+}
+
+/**
+ * Menu callback item domain_301_redirect_check().
+ *
+ * This callback prints out a validation hash string and then terminates the script.
+ *
+ */
+function domain_301_redirect_check() {
+  global $conf;
+  $conf['cache'] = FALSE;
+  echo variable_get('domain_301_redirect_domain_check', '');
+  exit;
+}

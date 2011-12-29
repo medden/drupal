@@ -1,0 +1,13 @@
+name = Domain 301 Redirect
+description = Allows you to 301 redirect any domain to the main domain associated with a site.
+core = 7.x
+
+files[] = domain_301_redirect.admin.inc
+files[] = domain_301_redirect.install
+files[] = domain_301_redirect.module
+; Information added by drupal.org packaging script on 2011-12-24
+version = "7.x-1.0-beta1"
+core = "7.x"
+project = "domain_301_redirect"
+datestamp = "1324753538"
+

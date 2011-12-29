@@ -120,7 +120,7 @@ function medden_install() {
       'module' => 'system',
       'delta' => 'powered-by',
       'theme' => $default_theme,
-      'status' => 1,
+      'status' => 0,
       'weight' => 10,
       'region' => 'footer',
       'pages' => '',

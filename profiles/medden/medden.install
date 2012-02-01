@@ -407,12 +407,20 @@ function medden_install() {
   // Update the menu router information.
   menu_rebuild();
 
+  // Enable the custom theme.
+  db_update('system')
+    ->fields(array('status' => 1))
+    ->condition('type', 'theme')
+    ->condition('name', 'mwd')
+    ->execute();
   // Enable the admin theme.
   db_update('system')
     ->fields(array('status' => 1))
     ->condition('type', 'theme')
     ->condition('name', 'seven')
     ->execute();
+  variable_set('theme_default', 'mwd');
   variable_set('admin_theme', 'seven');
   variable_set('node_admin_theme', '1');
+  //variable_set('live_css_hidemodules', 1),
 }

@@ -56,7 +56,7 @@ stylesheets[print][]      = css/print.css
 
 ; Add a blank stylesheet for easy customization.
 
-stylesheets[all][]        = css/fresh.less
+stylesheets[all][]        = css/fresh.css
 
 ; Add conditional stylesheets that are processed by IE. See the css/README.txt.
 

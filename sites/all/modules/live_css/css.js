@@ -2,7 +2,7 @@
 
 //main css styler management object
 window.styler = {
-    html: "<div class='controls'><select class='stylelist' /><div class='save'>Save</div><div class='close'>Close</div><div class='clear:both'></div></div>",
+    html: "<div class='controls'><select class='stylelist' /><div class='save'>Save</div><div class='close'>Close</div><div class='dock'>&#x2B07;</div><div class='clear:both'></div></div>",
     styleObjs: {},
     sList: [],
     init: function(){
@@ -22,6 +22,17 @@ window.styler = {
         });
         $('#csidebar .close').click(function(){
             sidebar.remove();
+        });
+        
+        $('#csidebar .dock').html((sidebar.dock == 'right') ? '&#x2B07;' : '&#x2B06;');
+        
+        $('#csidebar .dock').click(function() {
+          sidebar.dock = sidebar.dock == 'right' ? 'bottom' : 'right';
+          sidebar.dock = sidebar.dock;
+          sidebar.remove();
+          sidebar.show();
+          $('#csstab').css('display', 'none');
+          styler.init();
         });
         
         
@@ -65,6 +76,16 @@ window.styler = {
                     return;
             }
             
+            //ignore google fonts
+            //nb this should be generalised to ignore all external styles as they are not editable
+            if (title.match(/googleapis/))
+              return;
+            
+            //only enable less stylesheets if less is enabled
+            if (!Drupal.settings.live_css.less)
+              if (title.match(/\.less/))
+                return;
+            
             //item = item.replace(/http:\/\/.*/i, '');
             $('#csidebar .stylelist').append('<option value="' + item + '">' + title + '</option>');
         }
@@ -87,11 +108,12 @@ window.styler = {
                 //all @import get flattened into the style list
                 //then updates need to cascade down... good luck.
                 var styles = $(this).html().match(/@import url\(['"](.*)['"]\)/gi);
-                for(var s in styles){
-                    var item = styles[s].substring(13, styles[s].length - 2);
-                    addItem(item);
-                    self.sList.push(item);
-                }
+                if (styles)
+                  for (var i = 0; i < styles.length; i++) {
+                      var item = styles[i].substring(13, styles[i].length - 2);
+                      addItem(item);
+                      self.sList.push(item);
+                  }
             });
         }
         else{
@@ -135,7 +157,7 @@ window.styler = {
         this.curStyle = href;
         if(this.styleObjs[href] == null){
           
-          if (!!window.less && href.match(/\.less$/i)) {
+          if (!!window.less && href.match(/\.less/i)) {
             //remove the less styles
             var parts = href.split('/');
             var lessId = [];
@@ -160,6 +182,7 @@ window.styler = {
 //sidebar ui setup
 window.sidebar = {
     html: "<div id='csidebar'></div>",
+    dock: 'right',
     init: function(){
         //edit button
         var edittab = $("<div id='csstab'><div class='box'>Edit CSS</div></div>");
@@ -192,6 +215,8 @@ window.sidebar = {
             'min-width': 0
         });
         
+        $('#csidebar').addClass(sidebar.dock);
+        
         //hide admin menu d7
         if($('#toolbar').length > 0 && Drupal.settings.live_css.hideadmin == 1){
             $('#toolbar').css('display', 'none');
@@ -203,15 +228,29 @@ window.sidebar = {
             h = $(window).height();
             w = $(window).width();
             
-            //set the body size
-            $(document.body).css('width', w - 500);
-            $(document.body).css('height', h - parseInt($(document.body).css('paddingTop')) - parseInt($(document.body).css('marginTop')));
             
-            //set the sidebar size
-            $('#csidebar').css('height', h);
-            
-            //editor size
-            editor.height(h);
+            if (sidebar.dock == 'right') {
+              //set the body size
+              $(document.body).css('width', w - 500);
+              $(document.body).css('height', h - parseInt($(document.body).css('paddingTop')) - parseInt($(document.body).css('marginTop')));
+              
+              //set the sidebar size
+              $('#csidebar').css('height', h);
+              
+              //editor size
+              editor.height(h);
+              editor.width(494);
+            }
+            else if (sidebar.dock == 'bottom') {
+              $(document.body).css('width', w - parseInt($(document.body).css('paddingLeft')) - parseInt($(document.body).css('marginTop')));
+              $(document.body).css('height', h - 300);
+              
+              $('#csidebar').css('width', w);
+              
+              //editor size
+              editor.height(300);
+              editor.width(w - 6);
+            }
         };
         $(window).resize(size);
         size();
@@ -244,7 +283,7 @@ window.style = function(href, complete){
     this.href = href;
     var self = this;
     
-    if (!!less) {
+    if (!!window.less) {
       if (window.style.lessParser == undefined) {
         /*options = {
           optimization: ...,
@@ -254,7 +293,19 @@ window.style = function(href, complete){
         window.style.lessParser = new less.Parser();
       }
     }
-        
+    var hideLess = function(href) {
+      var parts = href.split('/');
+      var idStr = '';
+      for (var i = 3; i < parts.length - 1; i++)
+        idStr += parts[i] + '-';
+      
+      idStr += parts[parts.length - 1].split('.')[0];
+      idStr = 'less:' + idStr;
+      
+      var lessEl = $('style[id=' + idStr + ']');
+      
+      lessEl.remove();
+    }
     
     //given an href, attach the style and return the getter and setter
     
@@ -305,7 +356,8 @@ window.style = function(href, complete){
             
             self.setStyle = function(css){
               
-                if (!!window.style.lessParser && this.href.match(/\.less$/i)) {
+                if (!!window.style.lessParser && this.href.match(/\.less/i)) {
+                  hideLess(this.href);
                   this.less = css;
                   try {
                     window.style.lessParser.parse(css, function(e, tree) {
@@ -339,7 +391,8 @@ window.style = function(href, complete){
                 href = href.replace(/\?/g, '\\?');
                 var exp = new RegExp("\\/\\*\\+" + href + "\\*\\/(.|\\n|\\r)*\\/\\*\\-" + href + "\\*\\/");
                 
-                if (!!window.style.lessParser && this.href.match(/\.less$/i)) {
+                if (!!window.style.lessParser && this.href.match(/\.less/i)) {
+                  hideLess(this.href);
                   this.less = css;
                   try {
                     window.style.lessParser.parse(css, function(e, tree) {
@@ -353,7 +406,7 @@ window.style = function(href, complete){
             };
             
             self.getStyle = function(){
-              if (this.href.match(/\.less$/i) && this.less != undefined)
+              if (this.href.match(/\.less/i) && this.less != undefined)
                 return this.less;
               
                 var href = self.href;
@@ -465,9 +518,13 @@ window.editor = {
     },
     width: function(sWidth){
         //set editor width
+        $('#cedit').css('width', sWidth);
     },
     height: function(sHeight){
+      if (sidebar.dock == 'right')
         $('#cedit').css('height', sHeight - 65);
+      else
+        $('#cedit').css('height', sHeight - 40);
         //if(this.editor)
         //    this.editor.dimensionsChanged();
     },

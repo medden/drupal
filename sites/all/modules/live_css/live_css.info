@@ -3,9 +3,9 @@ description = Edit and save CSS changes live on the site
 core = 7.x
 files[] = live_css.module
 
-; Information added by drupal.org packaging script on 2011-10-19
-version = "7.x-2.x-dev"
+; Information added by drupal.org packaging script on 2011-12-11
+version = "7.x-2.0"
 core = "7.x"
 project = "live_css"
-datestamp = "1318983243"
+datestamp = "1323618645"
 

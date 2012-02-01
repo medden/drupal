@@ -58,6 +58,12 @@ function live_css_element_info_alter(&$type) {
 function live_css_admin(){
   $form = array();
   
+  $form['live_css_less'] = array(
+    '#type' => 'checkbox',
+    '#title' => t('Enable LESS Support'),
+    '#default_value' => variable_get('live_css_less', 1),
+    '#description' => t('Allows the live editing and display of LESS files on the site, by simply embedding stylesheets with a "less" extension instead of "css". The Less is parsed on each page load, even for anonymous users. In production you may wish to disable this feature and use the LESS module instead.')
+  );
   $form['live_css_hideadmin'] = array(
     '#type' => 'checkbox',
     '#title' => t('Hide Admin Menu'),
@@ -142,8 +148,11 @@ function live_css_list_files($folder){
  */
 function live_css_init() {
   
-  drupal_add_js(drupal_get_path('module', 'live_css') . '/less-display.js');
-  drupal_add_js(drupal_get_path('module', 'live_css') . '/less-1.1.3.min.js');
+  $less = variable_get('live_css_less', 1);
+  if ($less) {
+    drupal_add_js(drupal_get_path('module', 'live_css') . '/less-display.js');
+    drupal_add_js(drupal_get_path('module', 'live_css') . '/less-1.1.3.min.js');
+  }
   
   //check permissions
   if (user_access('edit css')) {
@@ -158,6 +167,7 @@ function live_css_init() {
     $settings['fontsize'] = variable_get('live_css_fontsize', '12px');
     $settings['tabsize'] = (int)variable_get('live_css_tabsize', 2);
     $settings['softtabs'] = (boolean)variable_get('live_css_softtabs', 1);
+    $settings['less'] = $less;
 
     $settings['savepath'] = url('css/save');
 

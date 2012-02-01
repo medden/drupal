@@ -1,0 +1,9 @@
+/*  This CSS file overwrites all other CSS.  
+ *  Use it to add custom client CSS code
+ *
+ *
+ * */
+
+a {
+ color:red; 
+}

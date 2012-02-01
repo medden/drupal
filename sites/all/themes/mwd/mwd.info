@@ -34,7 +34,7 @@ base theme  = zen
 ; http://drupal.org/node/263967 for more details.
 
 stylesheets[all][]        = css/html-reset.css
-stylesheets[all][]        = css/wireframes.css
+;stylesheets[all][]        = css/wireframes.css
 stylesheets[all][]        = css/layout-fixed.css
 stylesheets[all][]        = css/page-backgrounds.css
 stylesheets[all][]        = css/tabs.css
@@ -56,7 +56,7 @@ stylesheets[print][]      = css/print.css
 
 ; Add a blank stylesheet for easy customization.
 
-stylesheets[all][]        = css/fresh.css
+stylesheets[all][]        = css/global.css
 
 ; Add conditional stylesheets that are processed by IE. See the css/README.txt.
 

@@ -1,0 +1,13 @@
+name = "Touch icons"
+description = "Provides additional theme settings to display special Web Clip icons on iOS devices."
+core = 7.x
+package = "Theme settings"
+
+files[] = touch_icons.module
+
+; Information added by drupal.org packaging script on 2012-02-15
+version = "7.x-1.x-dev"
+core = "7.x"
+project = "touch_icons"
+datestamp = "1329266311"
+
